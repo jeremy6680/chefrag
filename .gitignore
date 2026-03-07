@@ -1,0 +1,47 @@
+# ==============================================================================
+# ChefRAG — .gitignore
+# ==============================================================================
+
+# --- Secrets ---
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+
+# --- Storage (generated at runtime — never commit) ---
+storage/chroma/
+storage/duckdb/
+
+# --- Data (personal recipes — never commit) ---
+data/favorites/
+data/new/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Streamlit ---
+.streamlit/secrets.toml

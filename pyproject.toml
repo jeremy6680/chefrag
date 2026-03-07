@@ -1,0 +1,43 @@
+# ==============================================================================
+# ChefRAG — Tool configuration (Black + Ruff)
+# ==============================================================================
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long — handled by Black
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=70"
+
+[tool.coverage.run]
+omit = [
+    # Streamlit entry point — UI tested manually, not via pytest
+    "app/main.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    # Streamlit rendering calls cannot be unit-tested without a browser
+    "pragma: no cover",
+    "st\\.",
+    "def login_form",
+    "def logout",
+]

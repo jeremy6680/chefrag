@@ -1,0 +1,75 @@
+# ==============================================================================
+# ChefRAG — Docker Compose
+#
+# Services:
+#   chefrag-ui     → Streamlit app (port 8501)
+#   chefrag-chroma → ChromaDB vector store (port 8000)
+#
+# DuckDB runs inside chefrag-ui via a mounted volume (no separate service).
+# Airflow will be added in Step 6.
+# ==============================================================================
+
+version: "3.9"
+
+services:
+  # ----------------------------------------------------------------------------
+  # Streamlit UI + LlamaIndex agent
+  # ----------------------------------------------------------------------------
+  chefrag-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chefrag-ui
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      # Recipe JSON exports (read-only inside container)
+      - ./data:/app/data:ro
+      # DuckDB persistent storage (read-write)
+      - ./storage/duckdb:/app/storage/duckdb
+    depends_on:
+      chefrag-chroma:
+        condition: service_healthy
+    networks:
+      - chefrag-net
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ----------------------------------------------------------------------------
+  # ChromaDB vector store
+  # ----------------------------------------------------------------------------
+  chefrag-chroma:
+    image: chromadb/chroma:0.5.3
+    container_name: chefrag-chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # ChromaDB persistent storage
+      - ./storage/chroma:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - chefrag-net
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# ------------------------------------------------------------------------------
+# Shared network
+# ------------------------------------------------------------------------------
+networks:
+  chefrag-net:
+    driver: bridge
