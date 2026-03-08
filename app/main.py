@@ -4,10 +4,11 @@ Handles:
 - i18n loading and language toggle (FR / EN)
 - Password-based authentication (via auth.py)
 - Chat interface with recipe category selector (via agent.py)
+- Structured question rendering: clickable buttons for clarifying questions
 - Responsive layout and WCAG 2.1 AA accessibility
 """
 from dotenv import load_dotenv
-load_dotenv() 
+load_dotenv()
 
 import json
 import logging
@@ -17,7 +18,7 @@ from typing import Any
 
 import streamlit as st
 
-from agent import build_agent, stream_agent_response
+from agent import build_agent, get_agent_response
 from auth import is_locked_out, login_form, logout, SESSION_KEY_AUTHENTICATED
 
 # ---------------------------------------------------------------------------
@@ -91,17 +92,31 @@ def t(key: str, **kwargs: Any) -> str:
 
 
 def init_session_state() -> None:
+    """Initialise all required Streamlit session state keys.
+
+    Called once at startup. Safe to call multiple times — only sets
+    keys that are not already present.
+    """
     if "language" not in st.session_state:
         st.session_state.language = DEFAULT_LANGUAGE
     if "translations" not in st.session_state:
         st.session_state.translations = load_translations(st.session_state.language)
     if "chat_history" not in st.session_state:
+        # List of {"role": "user"|"assistant", "content": str} dicts
         st.session_state.chat_history = []
     if "agent" not in st.session_state:
         st.session_state.agent = None
     if "recipe_category" not in st.session_state:
         st.session_state.recipe_category = "all"
-
+    if "pending_question" not in st.session_state:
+        # Holds the current structured question dict while waiting for user input.
+        # Shape: {"key": str, "text": str, "options": list[str]} or None
+        st.session_state.pending_question = None
+    if "cuisine_other_active" not in st.session_state:
+        # True when the user selected "Other" for cuisine and we show a text input
+        st.session_state.cuisine_other_active = False
+    if "needs_agent_call" not in st.session_state:
+        st.session_state.needs_agent_call = False
 
 # ---------------------------------------------------------------------------
 # Language toggle
@@ -134,6 +149,7 @@ def render_language_toggle() -> None:
 
 
 def render_login_page() -> None:
+    """Render the centered login form with language toggle."""
     col_spacer, col_content, col_spacer2 = st.columns([1, 2, 1])
     with col_content:
         login_form(translations=st.session_state.translations)
@@ -142,11 +158,16 @@ def render_login_page() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Chat interface
+# Chat interface helpers
 # ---------------------------------------------------------------------------
 
 
 def get_agent() -> Any:
+    """Return the cached agent, building it if not yet initialised.
+
+    Returns:
+        A fully initialised ChefRagAgent instance.
+    """
     if st.session_state.agent is None:
         with st.spinner(t("chat_thinking")):
             st.session_state.agent = build_agent(
@@ -166,13 +187,99 @@ def render_chat_message(role: str, content: str) -> None:
     """
     aria_label = t("aria_user_message") if role == "user" else t("aria_assistant_message")
     with st.chat_message(role):
-        # Streamlit chat_message renders as <div role="log"> — we add
-        # a visually-hidden label for screen readers via a custom span.
         st.markdown(
             f'<span class="sr-only">{aria_label}:</span>',
             unsafe_allow_html=True,
         )
         st.markdown(content)
+
+
+def _inject_user_answer(answer: str) -> None:
+    """Record a button-selected answer as a user message and clear pending state.
+
+    Appends the answer to chat_history as a user message, clears the
+    pending_question so the agent is called again on next rerun.
+
+    Args:
+        answer: The option text the user clicked.
+    """
+    st.session_state.chat_history.append({"role": "user", "content": answer})
+    st.session_state.pending_question = None
+    st.session_state.cuisine_other_active = False
+    st.session_state.needs_agent_call = True
+    st.rerun()
+
+
+def render_question_widget(question: dict) -> None:
+    """Render a clarifying question as clickable option buttons.
+
+    For questions with options: displays one button per option.
+    For "Other" cuisine selection: shows a text input field instead.
+    For free-text questions (empty options list): shows a text input.
+
+    Args:
+        question: Dict with keys "key", "text", "options" (list[str]).
+    """
+    options: list[str] = question.get("options", [])
+    question_text: str = question.get("text", "")
+    question_key: str = question.get("key", "")
+
+    with st.chat_message("assistant"):
+        st.markdown(
+            f'<span class="sr-only">{t("aria_assistant_message")}:</span>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(f"**{question_text}**")
+
+        # Free-text input: empty options list, or "Other" was previously selected
+        if not options or st.session_state.cuisine_other_active:
+            _render_free_text_input(question_key)
+            return
+
+        # Button grid: one button per option
+        cols = st.columns(len(options))
+        for i, option in enumerate(options):
+            with cols[i]:
+                if st.button(
+                    option,
+                    key=f"q_{question_key}_{i}",
+                    use_container_width=True,
+                    help=option,
+                ):
+                    if question_key == "cuisine" and option.lower() == "other":
+                        # Switch to free-text mode without injecting "Other" as answer
+                        st.session_state.cuisine_other_active = True
+                        st.rerun()
+                    else:
+                        _inject_user_answer(option)
+
+
+def _render_free_text_input(question_key: str) -> None:
+    """Render a free-text input field for open-ended question answers.
+
+    Displays a text input + submit button. On submit, injects the typed
+    value as a user message into the chat history.
+
+    Args:
+        question_key: The question key, used to namespace the widget key.
+    """
+    placeholder = t("chat_placeholder")
+    value = st.text_input(
+        label=t("chat_placeholder"),
+        label_visibility="collapsed",
+        key=f"free_text_{question_key}",
+        placeholder=placeholder,
+    )
+    if st.button(t("chat_send") if "chat_send" in st.session_state.get("translations", {}) else "→", key=f"free_text_submit_{question_key}"):
+        if value.strip():
+            _inject_user_answer(value.strip())
+        else:
+            st.warning(t("chat_no_input"))
+
+
+# ---------------------------------------------------------------------------
+# Main chat page
+# ---------------------------------------------------------------------------
 
 
 def render_chat_page() -> None:
@@ -181,14 +288,14 @@ def render_chat_page() -> None:
     Layout:
     - Top bar: title + category selector + logout
     - Chat history (scrollable)
-    - Sticky input bar at the bottom (mobile-friendly)
+    - Pending question widget OR sticky input bar
 
     Accessibility:
     - All interactive elements have ARIA labels
     - Focus is managed via Streamlit's native tab order
     - Color contrast meets WCAG 2.1 AA (4.5:1 for normal text)
     """
-    # ---- Accessibility: screen-reader-only utility class ----
+    # ---- Accessibility + responsive CSS ----
     st.markdown(
         """
         <style>
@@ -206,20 +313,14 @@ def render_chat_page() -> None:
         }
 
         /* ---- Responsive layout ---- */
-
-        /* Desktop (≥1024px): standard margins */
         .stApp { max-width: 1100px; margin: 0 auto; }
 
-        /* Tablet (768–1023px): tighter padding */
         @media (max-width: 1023px) {
             .stApp { padding: 0 1rem; }
         }
 
-        /* Mobile (<768px): full-width, fixed bottom input bar */
         @media (max-width: 767px) {
             .stApp { padding: 0 0.5rem; }
-            /* Streamlit chat_input is already sticky on mobile via JS —
-               we enforce bottom pinning for browsers that don't support it */
             section[data-testid="stBottom"] {
                 position: fixed;
                 bottom: 0;
@@ -239,7 +340,6 @@ def render_chat_page() -> None:
         }
 
         /* ---- Chat message contrast ---- */
-        /* User bubble: dark background, white text — contrast > 4.5:1 */
         div[data-testid="stChatMessage"][data-role="user"] {
             background-color: #1e3a5f;
             color: #f0f4f8;
@@ -247,7 +347,6 @@ def render_chat_page() -> None:
             padding: 0.75rem 1rem;
             margin-bottom: 0.5rem;
         }
-        /* Assistant bubble: slightly lighter, same contrast ratio */
         div[data-testid="stChatMessage"][data-role="assistant"] {
             background-color: #12263a;
             color: #e8edf2;
@@ -256,7 +355,19 @@ def render_chat_page() -> None:
             margin-bottom: 0.5rem;
         }
 
-        /* ---- Divider accessibility ---- */
+        /* ---- Question buttons ---- */
+        /* Larger touch targets, clear visual distinction */
+        div[data-testid="stHorizontalBlock"] .stButton button {
+            border: 1px solid rgba(245, 166, 35, 0.5);
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+        div[data-testid="stHorizontalBlock"] .stButton button:hover {
+            border-color: #f5a623;
+            background-color: rgba(245, 166, 35, 0.12);
+        }
+
         hr { border-color: rgba(255,255,255,0.1); }
         </style>
         """,
@@ -271,9 +382,7 @@ def render_chat_page() -> None:
 
     with col_category:
         category_keys = list(CATEGORY_OPTIONS.keys())
-        category_labels = [
-            t(f"category_{k}") for k in category_keys
-        ]
+        category_labels = [t(f"category_{k}") for k in category_keys]
         current_index = category_keys.index(st.session_state.recipe_category)
         selected_label = st.selectbox(
             label=t("category_label"),
@@ -281,15 +390,13 @@ def render_chat_page() -> None:
             index=current_index,
             key="category_selector",
             label_visibility="collapsed",
-            # ARIA label injected via help parameter (rendered as title attr)
             help=t("aria_category_select"),
         )
-        # Map label back to key
         selected_key = category_keys[category_labels.index(selected_label)]
         if selected_key != st.session_state.recipe_category:
             st.session_state.recipe_category = selected_key
-            # Reset agent so it picks up the new category filter
             st.session_state.agent = None
+            st.session_state.pending_question = None
             st.rerun()
 
     with col_lang:
@@ -299,13 +406,14 @@ def render_chat_page() -> None:
         if st.button(t("logout"), key="logout_btn", help=t("aria_logout_button")):
             st.session_state.chat_history = []
             st.session_state.agent = None
-            logout(st.session_state)  # gère authenticated + rate limit reset
+            st.session_state.pending_question = None
+            st.session_state.cuisine_other_active = False
+            logout(st.session_state)
             st.rerun()
 
     st.divider()
 
     # ---- Chat history ----
-    # ARIA: wrap in a labelled region so screen readers announce it
     st.markdown(
         f'<div role="log" aria-label="{t("aria_chat_history")}" aria-live="polite">',
         unsafe_allow_html=True,
@@ -313,7 +421,6 @@ def render_chat_page() -> None:
 
     history = st.session_state.chat_history
 
-    # Inject welcome message if history is empty
     if not history:
         render_chat_message("assistant", t("chat_welcome"))
 
@@ -324,21 +431,30 @@ def render_chat_page() -> None:
 
     # ---- New conversation button ----
     if history:
-        if st.button(
-            t("chat_clear"),
-            key="clear_btn",
-            help=t("aria_clear_button"),
-        ):
+        if st.button(t("chat_clear"), key="clear_btn", help=t("aria_clear_button")):
             st.session_state.chat_history = []
+            st.session_state.pending_question = None
+            st.session_state.cuisine_other_active = False
             st.rerun()
 
-    # ---- Input bar ----
-    # st.chat_input is rendered at the bottom by Streamlit automatically.
-    # It is keyboard-accessible (Tab + Enter) and has a native ARIA role.
+    # After a button answer is injected, call the agent on the next rerun
+    if st.session_state.needs_agent_call:
+        st.session_state.needs_agent_call = False
+        _call_agent_and_handle_response()
+
+    # ---- Pending question OR text input ----
+    # If the agent returned a clarifying question on the last turn, render
+    # the question widget instead of the free-text input bar.
+    if st.session_state.pending_question:
+        render_question_widget(st.session_state.pending_question)
+        # Do NOT render the chat_input while a question is pending —
+        # the button widget is the expected interaction point.
+        return
+
+    # ---- Free-text input bar ----
     user_input = st.chat_input(
         placeholder=t("chat_placeholder"),
         key="chat_input",
-        # max_chars is intentionally unset — no artificial limit on queries
     )
 
     if user_input:
@@ -351,40 +467,58 @@ def render_chat_page() -> None:
         st.session_state.chat_history.append({"role": "user", "content": user_input})
         render_chat_message("user", user_input)
 
-        # Build agent if needed and stream response
-        agent = get_agent()
+        _call_agent_and_handle_response()
 
+
+def _call_agent_and_handle_response() -> None:
+    """Call the agent with the current history and handle its structured response.
+
+    - If the agent returns a "question", store it in pending_question and rerun.
+    - If the agent returns a "message", render it and append to history.
+
+    This function is called both after free-text input and after a button
+    answer is injected (via _inject_user_answer → rerun → this function).
+    """
+    agent = get_agent()
+
+    with st.spinner(t("chat_thinking")):
+        try:
+            response = get_agent_response(
+                agent=agent,
+                messages=st.session_state.chat_history,
+                category=st.session_state.recipe_category,
+                language=st.session_state.language,
+            )
+        except Exception as exc:
+            logger.exception("Agent error: %s", exc)
+            error_msg = t("chat_error")
+            with st.chat_message("assistant"):
+                st.error(error_msg, icon="⚠️")
+            st.session_state.chat_history.append(
+                {"role": "assistant", "content": error_msg}
+            )
+            return
+
+    response_type = response.get("type", "message")
+
+    if response_type == "question":
+        # Store question for rendering on next rerun — do NOT add to history
+        # (questions are UI state, not conversation content)
+        st.session_state.pending_question = response
+        st.rerun()
+
+    else:
+        # Plain message — render and append to history
+        text = response.get("text", "")
         with st.chat_message("assistant"):
             st.markdown(
                 f'<span class="sr-only">{t("aria_assistant_message")}:</span>',
                 unsafe_allow_html=True,
             )
-            response_placeholder = st.empty()
-            full_response = ""
-
-            try:
-                with st.spinner(t("chat_thinking")):
-                    for chunk in stream_agent_response(
-                        agent=agent,
-                        user_message=user_input,
-                        category=st.session_state.recipe_category,
-                        language=st.session_state.language,
-                    ):
-                        full_response += chunk
-                        response_placeholder.markdown(full_response + "▌")
-
-                response_placeholder.markdown(full_response)
-                st.session_state.chat_history.append(
-                    {"role": "assistant", "content": full_response}
-                )
-
-            except Exception as exc:
-                logger.exception("Agent error: %s", exc)
-                error_msg = t("chat_error")
-                response_placeholder.error(error_msg, icon="⚠️")
-                st.session_state.chat_history.append(
-                    {"role": "assistant", "content": error_msg}
-                )
+            st.markdown(text)
+        st.session_state.chat_history.append(
+            {"role": "assistant", "content": text}
+        )
 
 
 # ---------------------------------------------------------------------------
