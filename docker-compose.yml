@@ -46,7 +46,7 @@ services:
   # ChromaDB vector store
   # ----------------------------------------------------------------------------
   chefrag-chroma:
-    image: chromadb/chroma:0.5.3
+    image: chromadb/chroma:0.5.17
     container_name: chefrag-chroma
     restart: unless-stopped
     ports:
