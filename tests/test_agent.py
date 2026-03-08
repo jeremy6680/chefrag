@@ -13,7 +13,7 @@ No network calls, no file I/O, no embedding model required.
 from unittest.mock import MagicMock, patch, call
 import pytest
 
-from app.agent import (
+from agent import (
     ChefRagAgent,
     MetadataFilterTool,
     RecipeResult,
@@ -491,7 +491,7 @@ class TestBuildAgent:
     def test_raises_if_api_key_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """build_agent should raise EnvironmentError if ANTHROPIC_API_KEY is not set."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-        from app.agent import build_agent
+        from agent import build_agent
         with pytest.raises(EnvironmentError, match="ANTHROPIC_API_KEY"):
             build_agent(
                 chroma_host="localhost",

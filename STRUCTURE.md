@@ -11,13 +11,14 @@ chefrag/
 │
 ├── app/                           # Application source code
 │   ├── __init__.py
-│   ├── main.py                    # Streamlit entry point + chat UI
+│   ├── main.py                    # Streamlit entry point + chat UI  ← Step 5
 │   ├── agent.py                   # LlamaIndex agent, RAG tools, system prompt
+│   │                              #   (stubs active until Step 4 is complete)
 │   ├── indexer.py                 # JSON parser, ChromaDB writer, DuckDB writer
 │   ├── auth.py                    # bcrypt auth, rate limiting
 │   └── i18n/
-│       ├── fr.json                # French static strings
-│       └── en.json                # English static strings
+│       ├── fr.json                # French static strings  ← Step 5 (complete)
+│       └── en.json                # English static strings  ← Step 5 (complete)
 │
 ├── dags/
 │   └── reindex_dag.py             # Airflow DAG (Step 6)
@@ -64,6 +65,25 @@ On CPX21 (4GB RAM), Airflow adds ~1.5–2GB overhead. It is deliberately exclude
 
 Using `llama-index-embeddings-huggingface` (sentence-transformers) instead of the OpenAI embeddings API to avoid per-token costs on indexing. The model runs inside the `chefrag-ui` container.
 
+### i18n — JSON files + session state (Step 5)
+
+All static UI strings are stored in `app/i18n/fr.json` and `app/i18n/en.json`.
+The `load_translations(lang)` function loads the correct file and stores it in
+`st.session_state.translations`. The `t(key)` helper reads from there.
+Language preference is persisted in session state and a toggle button triggers
+`st.rerun()` to refresh all strings without a page reload.
+
+### Agent stub (Step 5 → Step 4)
+
+`app/agent.py` exposes two functions consumed by `main.py`:
+
+- `build_agent()` — returns the agent instance (or `None` in stub mode)
+- `stream_agent_response(agent, user_message, category, language)` — yields chunks
+
+The stub lets Step 5 be fully functional and testable without a live
+ChromaDB / DuckDB connection. Step 4 replaces the stub bodies with the real
+LlamaIndex implementation while keeping the same function signatures.
+
 ## Data flow
 
 ```
@@ -83,3 +103,17 @@ Umami JSON export
    main.py (Streamlit)
    └── chat interface → user
 ```
+
+## Session state keys (Step 5)
+
+| Key               | Type         | Description                                      |
+| ----------------- | ------------ | ------------------------------------------------ |
+| `language`        | `str`        | Active language code (`"fr"` / `"en"`)           |
+| `translations`    | `dict`       | Loaded i18n strings for the active language      |
+| `authenticated`   | `bool`       | Whether the user has passed the login screen     |
+| `login_attempts`  | `int`        | Number of consecutive failed login attempts      |
+| `login_locked`    | `bool`       | Whether the login is currently rate-limited      |
+| `chat_history`    | `list[dict]` | List of `{role, content}` message dicts          |
+| `agent`           | `Any`        | Cached LlamaIndex agent (built once per session) |
+| `recipe_category` | `str`        | Active category filter (`all/favorites/new`)     |
+| `pending_input`   | `str`        | Reserved for future pre-filling use              |

@@ -1,0 +1,50 @@
+{
+  "app_title": "ChefRAG",
+  "app_tagline": "Votre assistant culinaire personnel",
+
+  "lang_toggle": "🇬🇧 English",
+
+  "login_title": "Connexion",
+  "login_subtitle": "Entrez votre mot de passe pour accéder à l'application.",
+  "login_password_label": "Mot de passe",
+  "login_password_placeholder": "••••••••",
+  "login_submit": "Se connecter",
+  "login_error_invalid": "Mot de passe incorrect. Veuillez réessayer.",
+  "login_error_locked": "Trop de tentatives échouées. Veuillez réessayer dans quelques instants.",
+  "login_attempts_remaining": "Tentative(s) restante(s) : {n}",
+  "login": {
+    "title": "Connexion",
+    "password_label": "Mot de passe",
+    "password_placeholder": "••••••••",
+    "submit_button": "Se connecter",
+    "error_invalid": "Mot de passe incorrect.",
+    "error_locked": "Trop de tentatives. Réessayez dans 5 minutes.",
+    "error_attempts_remaining": "Tentative(s) restante(s) : {remaining}"
+  },
+  "chat_title": "Que voulez-vous cuisiner ?",
+  "chat_placeholder": "Ex : J'ai des œufs, du fromage râpé et du jambon...",
+  "chat_send": "Envoyer",
+  "chat_clear": "Nouvelle conversation",
+  "chat_thinking": "ChefRAG réfléchit...",
+  "chat_welcome": "Bonjour ! Je suis ChefRAG, votre assistant culinaire. Dites-moi quels ingrédients vous avez sous la main et je vous suggérerai des recettes de votre collection personnelle.",
+  "chat_error": "Une erreur s'est produite. Veuillez réessayer.",
+  "chat_no_input": "Veuillez saisir un message avant d'envoyer.",
+
+  "category_label": "Catégorie de recettes",
+  "category_all": "Toutes",
+  "category_favorites": "Favoris",
+  "category_new": "Nouvelles",
+
+  "logout": "Déconnexion",
+  "footer": "ChefRAG — Vos recettes, votre assistant.",
+
+  "aria_lang_toggle": "Changer la langue en anglais",
+  "aria_send_button": "Envoyer le message",
+  "aria_clear_button": "Effacer la conversation",
+  "aria_chat_input": "Zone de saisie du message",
+  "aria_chat_history": "Historique de la conversation",
+  "aria_user_message": "Votre message",
+  "aria_assistant_message": "Réponse de ChefRAG",
+  "aria_logout_button": "Se déconnecter",
+  "aria_category_select": "Sélectionner la catégorie de recettes"
+}

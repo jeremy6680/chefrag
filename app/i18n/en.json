@@ -1,0 +1,50 @@
+{
+  "app_title": "ChefRAG",
+  "app_tagline": "Your personal culinary assistant",
+
+  "lang_toggle": "🇫🇷 Français",
+
+  "login_title": "Sign in",
+  "login_subtitle": "Enter your password to access the app.",
+  "login_password_label": "Password",
+  "login_password_placeholder": "••••••••",
+  "login_submit": "Sign in",
+  "login_error_invalid": "Incorrect password. Please try again.",
+  "login_error_locked": "Too many failed attempts. Please wait a moment and try again.",
+  "login_attempts_remaining": "Attempt(s) remaining: {n}",
+  "login": {
+    "title": "Sign in",
+    "password_label": "Password",
+    "password_placeholder": "Enter your password",
+    "submit_button": "Sign in",
+    "error_invalid": "Incorrect password.",
+    "error_locked": "Too many attempts. Try again in 5 minutes.",
+    "error_attempts_remaining": "Attempt(s) remaining: {remaining}"
+  },
+  "chat_title": "What would you like to cook?",
+  "chat_placeholder": "E.g. I have eggs, grated cheese and ham...",
+  "chat_send": "Send",
+  "chat_clear": "New conversation",
+  "chat_thinking": "ChefRAG is thinking...",
+  "chat_welcome": "Hello! I'm ChefRAG, your personal culinary assistant. Tell me what ingredients you have on hand and I'll suggest recipes from your personal collection.",
+  "chat_error": "Something went wrong. Please try again.",
+  "chat_no_input": "Please type a message before sending.",
+
+  "category_label": "Recipe category",
+  "category_all": "All",
+  "category_favorites": "Favorites",
+  "category_new": "New",
+
+  "logout": "Sign out",
+  "footer": "ChefRAG — Your recipes, your assistant.",
+
+  "aria_lang_toggle": "Switch language to French",
+  "aria_send_button": "Send message",
+  "aria_clear_button": "Clear conversation",
+  "aria_chat_input": "Message input field",
+  "aria_chat_history": "Conversation history",
+  "aria_user_message": "Your message",
+  "aria_assistant_message": "ChefRAG response",
+  "aria_logout_button": "Sign out",
+  "aria_category_select": "Select recipe category"
+}

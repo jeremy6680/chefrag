@@ -24,7 +24,8 @@ import chromadb
 import duckdb
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-from app.indexer import CHROMA_COLLECTION_PREFIX, DUCKDB_TABLE_NAME, EMBEDDING_MODEL_NAME
+from indexer import CHROMA_COLLECTION_PREFIX, DUCKDB_TABLE_NAME, EMBEDDING_MODEL_NAME
+from collections.abc import Iterator
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -609,3 +610,48 @@ def build_agent(
         filter_tool=filter_tool,
         anthropic_client=anthropic_client,
     )
+
+
+# ---------------------------------------------------------------------------
+# Streaming wrapper — public API consumed by main.py (Step 5)
+# ---------------------------------------------------------------------------
+
+
+def stream_agent_response(
+    agent: "ChefRagAgent",
+    user_message: str,
+    category: str = "all",
+    language: str = "fr",
+) -> Iterator[str]:
+    """Stream the agent's response word by word for the Streamlit chat UI.
+
+    Wraps ``ChefRagAgent.chat()`` and simulates token streaming by splitting
+    the complete response into words. This avoids holding the full response
+    in memory before rendering starts.
+
+    Args:
+        agent: Initialised ChefRagAgent instance from ``build_agent()``.
+        user_message: Raw user input from the chat interface.
+        category: Recipe category filter — ``"all"``, ``"favorites"``,
+            or ``"new"``.
+        language: Active UI language — ``"fr"`` or ``"en"``.
+
+    Yields:
+        Successive word chunks of the assistant's response.
+    """
+    from collections.abc import Iterator  # local import to avoid circular ref
+
+    filters = SearchFilters(
+        source_category=None if category == "all" else category
+    )
+
+    # chat() returns the full response as a string — we split it into words
+    # to simulate streaming in the Streamlit UI
+    full_response = agent.chat(
+        messages=[{"role": "user", "content": user_message}],
+        language=language,
+        filters=filters,
+    )
+
+    for word in full_response.split(" "):
+        yield word + " "

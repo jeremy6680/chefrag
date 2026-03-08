@@ -17,8 +17,9 @@
 ## ✅ Step 2 — Authentication (`app/auth.py`)
 
 - [x] `verify_password(plain, hashed)` — bcrypt check
-- [x] `check_rate_limit(session_state)` — lock after 5 failed attempts
-- [x] `login_form()` — Streamlit form with i18n strings
+- [x] `is_locked_out(session_state)` + `record_failed_attempt()` — rate limiting (5 attempts, 5 min lockout)
+- [x] `login_form(translations)` — Streamlit form with i18n strings
+- [x] `logout(session_state)` — clears auth state
 - [x] `test_auth.py` — unit tests (valid pwd, invalid pwd, lockout)
 
 ---
@@ -45,21 +46,40 @@
 - [x] `RecipeSearchTool` — semantic search in ChromaDB via LlamaIndex embeddings
 - [x] `MetadataFilterTool` — structured filter on DuckDB (time, cuisine, category)
 - [x] `ChefRagAgent` — stateless agent: `chat(messages, language, filters) -> str`
-- [x] `build_agent()` — factory: initialises all dependencies from env vars
+- [x] `build_agent(chroma_host, chroma_port, duckdb_path)` — factory
+- [x] `stream_agent_response(agent, user_message, category, language)` — streaming wrapper for UI
 - [x] System prompt: clarifying questions, bilingual (FR/EN), explain matches
 - [x] RAG context injected into last user message before Claude API call
 - [x] `test_agent.py` — unit tests with fully mocked dependencies
 
 ---
 
-## 🔲 Step 5 — UI (`app/main.py`)
+## ✅ Step 5 — UI (`app/main.py`)
 
-- [ ] i18n loader: `load_translations(lang)`
-- [ ] Language toggle in header (persisted in session state)
-- [ ] Login page (calls `auth.py`)
-- [ ] Chat interface (calls `agent.py`)
-- [ ] Responsive layout (mobile, tablet, desktop)
-- [ ] WCAG 2.1 AA compliance
+- [x] `load_translations(lang)` — loads `app/i18n/{lang}.json`
+- [x] `t(key, **kwargs)` — translation helper with placeholder support
+- [x] `init_session_state()` — initialises all session state keys
+- [x] Language toggle in header (persisted in session state, triggers rerun)
+- [x] Login page — delegates entirely to `auth.login_form(translations)`
+- [x] Chat interface — calls `agent.build_agent()` + `agent.stream_agent_response()`
+- [x] Recipe category selector (all / favorites / new)
+- [x] Logout button — calls `auth.logout()`
+- [x] Responsive layout (mobile, tablet, desktop) via injected CSS
+- [x] WCAG 2.1 AA: focus indicators, ARIA labels, sr-only labels, skip link
+- [x] `app/i18n/fr.json` + `app/i18n/en.json` — complete strings for Step 5
+- [x] `Makefile` — `make run`, `make test`, `make lint`, `make chroma`, `make index`
+- [x] `python-dotenv` — `.env` loaded at startup via `load_dotenv()`
+
+---
+
+## 🔲 Step 5b — UX improvements (`app/main.py` + `app/agent.py`)
+
+> To be scoped after first end-to-end test session.
+
+- [ ] Review and improve agent response quality (relevance, tone, match explanation)
+- [ ] Improve chat UX (message rendering, loading states, error handling)
+- [ ] Review i18n strings for naturalness (FR especially)
+- [ ] Add conversation history passed to `agent.chat()` (currently single-turn)
 
 ---
 

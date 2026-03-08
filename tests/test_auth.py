@@ -15,7 +15,7 @@ import time
 import bcrypt
 import pytest
 
-from app.auth import (
+from auth import (
     LOCKOUT_DURATION_SECONDS,
     MAX_FAILED_ATTEMPTS,
     SESSION_KEY_AUTHENTICATED,
