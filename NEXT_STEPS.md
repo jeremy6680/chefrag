@@ -40,13 +40,15 @@
 
 ---
 
-## 🔲 Step 4 — Agent (`app/agent.py`)
+## ✅ Step 4 — Agent (`app/agent.py`)
 
-- [ ] `RecipeSearchTool` — semantic search in ChromaDB via LlamaIndex
-- [ ] `MetadataFilterTool` — structured filter on DuckDB
-- [ ] `build_agent()` — LlamaIndex ReActAgent with system prompt
-- [ ] System prompt: clarifying questions, bilingual, explain matches
-- [ ] `test_agent.py` — unit tests (mocked tools)
+- [x] `RecipeSearchTool` — semantic search in ChromaDB via LlamaIndex embeddings
+- [x] `MetadataFilterTool` — structured filter on DuckDB (time, cuisine, category)
+- [x] `ChefRagAgent` — stateless agent: `chat(messages, language, filters) -> str`
+- [x] `build_agent()` — factory: initialises all dependencies from env vars
+- [x] System prompt: clarifying questions, bilingual (FR/EN), explain matches
+- [x] RAG context injected into last user message before Claude API call
+- [x] `test_agent.py` — unit tests with fully mocked dependencies
 
 ---
 

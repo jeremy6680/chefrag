@@ -126,3 +126,29 @@ For exports without any bullet characters (fallback), all lines above a minimum 
 **Decision:** A `cuisine_tags` field is derived by splitting the `description` string on commas. Both `cuisine_tags` and the original `recipe_cuisine` are stored (the latter for backward compatibility with the Umami data model).
 
 **Consequences:** Cuisine-based filtering and search rely on `cuisine_tags`. The `recipe_cuisine` field is preserved in DuckDB but treated as secondary.
+
+---
+
+## ADR-010 — Stateless agent; conversation history managed by Streamlit
+
+**Date:** Step 4  
+**Status:** Accepted
+
+**Context:** The agent could manage its own conversational state (clarification phase → search phase → done) via an internal state machine. This would guarantee correct flow regardless of user input.
+
+**Decision:** The agent is stateless. `ChefRagAgent.chat()` accepts the full conversation history on every call and returns a single reply. Streamlit session state in `main.py` owns the history. The system prompt instructs Claude to handle the clarification flow naturally.
+
+**Consequences:** Simpler code, simpler tests, easier to debug. Claude handles the clarification flow reliably via the system prompt for single-user personal use. A state machine can be added in a future iteration if the conversational behaviour is found to be insufficient.
+
+---
+
+## ADR-011 — RAG: semantic search intersected with metadata filter
+
+**Date:** Step 4  
+**Status:** Accepted
+
+**Context:** Two tools are available: ChromaDB (semantic) and DuckDB (structured). Using only one loses either semantic relevance or hard constraints like cook time.
+
+**Decision:** Both tools are run in parallel. The agent intersects semantic results with metadata-filtered results. If the intersection is empty (no recipe matches both criteria), it falls back to semantic-only results rather than returning nothing.
+
+**Consequences:** Users always get suggestions even when filters are strict. The fallback is clearly explained in the system prompt so Claude can tell the user which constraint could not be satisfied.
