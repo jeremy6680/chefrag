@@ -95,3 +95,34 @@ Architectural and technical decisions, with rationale.
 **Decision:** `pydantic` pinned to `2.11.5` and `fastapi` to `0.111.0`, as validated by a clean venv install. These are the versions pip resolved when all other constraints were satisfied.
 
 **Consequences:** None — these are transitive dependencies that don't affect application code directly.
+
+---
+
+## ADR-008 — Ingredient parsing strategy: bullet filter + full-text embedding
+
+**Date:** Step 3  
+**Status:** Accepted
+
+**Context:** Umami JSON exports mix real ingredient lines (prefixed with `•`) with narrative text (section headers, cooking notes). Both types of content are present in the same `recipeIngredient` array.
+
+**Decision:** Two representations are maintained:
+
+- `ingredients_raw` — the full unfiltered list, used for embedding in ChromaDB. Narrative context improves semantic search coverage for edge cases (e.g. "fermented black bean paste").
+- `ingredients_clean` — only bullet-prefixed lines, stripped of the `•`. Used for display in the UI and stored in DuckDB for structured filtering.
+
+For exports without any bullet characters (fallback), all lines above a minimum length threshold are kept in `ingredients_clean`.
+
+**Consequences:** ChromaDB embeddings contain richer context at the cost of slight noise. DuckDB stores clean ingredient lists suitable for display. No information is lost.
+
+---
+
+## ADR-009 — Cuisine tags parsed from `description` field, not `recipeCuisine`
+
+**Date:** Step 3  
+**Status:** Accepted
+
+**Context:** The Umami `recipeCuisine` field is unreliable — for example, the "One Pan Mexican Quinoa" recipe has `recipeCuisine: "Vegetarian"`, which is a dietary type, not a cuisine. The `description` field consistently contains a comma-separated list of accurate tags (e.g. `"Korean, Chinese, Main, Vegetarian-adaptable, Asian"`).
+
+**Decision:** A `cuisine_tags` field is derived by splitting the `description` string on commas. Both `cuisine_tags` and the original `recipe_cuisine` are stored (the latter for backward compatibility with the Umami data model).
+
+**Consequences:** Cuisine-based filtering and search rely on `cuisine_tags`. The `recipe_cuisine` field is preserved in DuckDB but treated as secondary.
