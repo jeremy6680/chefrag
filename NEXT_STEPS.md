@@ -14,12 +14,12 @@
 
 ---
 
-## 🔲 Step 2 — Authentication (`app/auth.py`)
+## ✅ Step 2 — Authentication (`app/auth.py`)
 
-- [ ] `verify_password(plain, hashed)` — bcrypt check
-- [ ] `check_rate_limit(session_state)` — lock after 5 failed attempts
-- [ ] `login_form()` — Streamlit form with i18n strings
-- [ ] `test_auth.py` — unit tests (valid pwd, invalid pwd, lockout)
+- [x] `verify_password(plain, hashed)` — bcrypt check
+- [x] `check_rate_limit(session_state)` — lock after 5 failed attempts
+- [x] `login_form()` — Streamlit form with i18n strings
+- [x] `test_auth.py` — unit tests (valid pwd, invalid pwd, lockout)
 
 ---
 
