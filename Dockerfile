@@ -23,6 +23,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # --- Application code ---
 COPY app/ ./app/
 COPY data/ ./data/
+COPY tests/ ./tests/
+COPY conftest.py ./conftest.py
 
 # --- Storage directories (will be overridden by volumes in production) ---
 RUN mkdir -p /app/storage/chroma /app/storage/duckdb
