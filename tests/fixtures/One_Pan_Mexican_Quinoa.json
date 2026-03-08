@@ -1,0 +1,59 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Recipe",
+  "name": "One Pan Mexican Quinoa",
+  "url": "https://www.umami.recipes/recipe/nqaKsx9aKjdsYLh3PxEk",
+  "image": [
+    "https://www.umami.recipes/api/image/recipes/nqaKsx9aKjdsYLh3PxEk/images/4Ph3aNpkixhVn6YFpYmw5i?w=2048&q=75"
+  ],
+  "author": {
+    "@type": "Person",
+    "name": "Hine"
+  },
+  "datePublished": "2023-10-15T10:28:29.270Z",
+  "description": "Vegetarian, Main",
+  "prepTime": "P0Y0M0DT0H10M0S",
+  "cookTime": "P0Y0M0DT0H25M0S",
+  "totalTime": "P0Y0M0DT0H35M0S",
+  "keywords": "One Pan Mexican Quinoa, Vegetarian, Main, New",
+  "recipeYield": "4 servings",
+  "recipeCategory": "New",
+  "recipeCuisine": "Vegetarian",
+  "nutrition": {
+    "@context": "https://schema.org",
+    "@type": "NutritionInformation"
+  },
+  "recipeIngredient": [
+    "1 tablespoon olive oil",
+    "2 cloves garlic (minced)",
+    "1 jalapeno (minced)",
+    "1 cup quinoa",
+    "1 cup vegetable broth",
+    "1 15-ounce can black beans, drained and rinsed",
+    "1 14.5 oz can fire-roasted diced tomatoes",
+    "1 cup corn kernels (frozen, canned or roasted)",
+    "1 teaspoon chili powder",
+    "1/2 teaspoon cumin",
+    "Kosher salt and freshly ground black pepper (to taste)",
+    "1 avocado (halved, seeded, peeled and diced)",
+    "Juice of 1 lime",
+    "2 tablespoons chopped fresh cilantro leaves"
+  ],
+  "recipeInstructions": [
+    {
+      "@type": "HowToStep",
+      "text": "Heat olive oil in a large skillet over medium high heat. Add garlic and jalapeno, and cook, stirring frequently, until fragrant, about 1 minute.",
+      "url": "https://www.umami.recipes/recipe/nqaKsx9aKjdsYLh3PxEk?start=true&step=1"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Stir in quinoa, vegetable broth, beans, tomatoes, corn, chili powder and cumin; season with salt and pepper, to taste. Bring to a boil; cover, reduce heat and simmer until quinoa is cooked through, about 20 minutes. Stir in avocado, lime juice and cilantro.",
+      "url": "https://www.umami.recipes/recipe/nqaKsx9aKjdsYLh3PxEk?start=true&step=2"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Serve immediately.",
+      "url": "https://www.umami.recipes/recipe/nqaKsx9aKjdsYLh3PxEk?start=true&step=3"
+    }
+  ]
+}

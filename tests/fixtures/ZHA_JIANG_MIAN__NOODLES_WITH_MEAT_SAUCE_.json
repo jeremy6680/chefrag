@@ -1,0 +1,117 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Recipe",
+  "name": "ZHA JIANG MIAN (NOODLES WITH MEAT SAUCE)",
+  "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223",
+  "image": [
+    "https://www.umami.recipes/api/image/recipes/6GU8VBUycqn2GxzKq223/images/z7tRXtgymDYLhLURD9yduo?w=2048&q=75"
+  ],
+  "author": {
+    "@type": "Person",
+    "name": "Hine"
+  },
+  "datePublished": "2024-04-20T18:55:56.151Z",
+  "description": "Korean, Chinese, Main, Vegetarian-adaptable, Asian",
+  "prepTime": "P0Y0M0DT0H0M0S",
+  "cookTime": "P0Y0M0DT0H0M0S",
+  "totalTime": "P0Y0M0DT0H0M0S",
+  "keywords": "ZHA JIANG MIAN (NOODLES WITH MEAT SAUCE), Korean, Chinese, Main, Vegetarian-adaptable, Asian, Favorites",
+  "recipeYield": "",
+  "recipeCategory": "Favorites",
+  "recipeCuisine": "Korean",
+  "recipeIngredient": [
+    "Ultimate zha jiang sauce",
+    "Over the years my mom has incorporated chunjang, the dark, glossy, fermented black bean paste Koreans use for zha jiang. She also adds a bit of Japanese miso and some diced shrimp for even more flavor.",
+    "•1/3 pound ground turkey (93% lean)",
+    "•1/4 pound raw shrimp, peeled and diced",
+    "•Cooking oil",
+    "•1 medium onion (about 1 cup, finely diced)",
+    "•4 cups napa cabbage (green parts roughly cut, white parts 1/4″ dice)",
+    "•1 medium zucchini (about 1 cup, 1/4″ dice)",
+    "•2 slices ginger (optional)",
+    "•1/3 cup chunjang (fermented black bean paste; found in Korean markets)",
+    "•2 tablespoons ground bean sauce (found in Asian markets; Koon Chun with the yellow and blue label is a good one)",
+    "•2 tablespoons hoisin sauce (found in Asian markets; Koon Chun with the yellow and blue label is a good one)",
+    "•1 tablespoon miso paste",
+    "•2 tablespoons soy sauce",
+    "•1/4 cup chicken broth",
+    "•1/2 cup water",
+    "•3 tablespoons cornstarch, mixed with 3 tablespoons water",
+    "•1/2 teaspoon pure sesame oil",
+    "Simplified zha jiang sauce",
+    "If you don’t have access to Korean chungjang, this my mom’s classic zha jiang sauce, which uses two Chinese sauces – hoisin and ground bean sauce – that are more widely available. This version is not as dark but still rich and flavorful.",
+    "•1/2 pound ground turkey (93% lean)",
+    "•Cooking oil",
+    "•1 medium onion (about 1 cup, finely diced)",
+    "•4 cups napa cabbage (green parts roughly cut, white parts 1/4″ dice)",
+    "•1 medium zucchini (about 1 cup, 1/4″ dice)",
+    "•2 slices ginger (optional)",
+    "•1/3 cup ground bean sauce (found in Asian markets; Koon Chun with the yellow and blue label is a good one)",
+    "•1/3 cup hoisin sauce (found in Asian markets; Koon Chun with the yellow and blue label is a good one)",
+    "•3 tablespoons soy sauce",
+    "•1/4 cup chicken broth",
+    "•1/2 cup water",
+    "•3 tablespoons cornstarch, mixed with 3 tablespoons water",
+    "•1/2 teaspoon pure sesame oil",
+    "Other ingredients",
+    "•Fresh zha jiang noodles (buy at an Asian store, in the refrigerated or frozen section) or udon noodles",
+    "•Cucumber (thin-skinned Persian are ideal, but small kirby cucumbers are also fine)"
+  ],
+  "recipeInstructions": [
+    {
+      "@type": "HowToStep",
+      "text": "Preparation",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=1"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Wash and dry napa cabbage leaves. Green leafy parts may be left in larger pieces (2″ or so), but white parts must be diced small (cut white parts vertically into 1/4″ wide sticks, then cut sticks into 1/4″ dice).",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=2"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Cut zucchini in 1/4″ dice also (slice lengthwise intro 1/4″ strips, then strips into 1/4″ sticks, then sticks into 1/4″ dice).",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=3"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Heat 2 tablespoons of cooking oil in a skillet over medium heat. Add onion and cook until softened; remove to a bowl. Add a bit more oil and cook cabbage until edges look translucent; remove and add to bowl. Add zucchini and cook briefly, just to coat with a bit of oil; remove and add to other vegetables.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=4"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Heat a bit more oil and cook ground meat, breaking it up well with a spatula. When all traces of pink are gone, remove meat to a separate bowl.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=5"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Heat 3 tablespoons of oil in the skillet with the ginger slices. Add ground bean sauce and hoisin sauce (also chunjang and miso, if using) and cook, stirring, until the sauces are bubbling hot and mostly mixed into the oil.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=6"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Add meat back in (try and leave out any juice that may have accumulated), and mix well with sauce. Cook for another minute, then remove ginger slices. Add back vegetables and stir.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=7"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Add soy sauce, water and chicken broth (you may substitute 3 tablespoons water plus 1 tablespoon soy sauce if you don’t have chicken broth) and stir. Cook to heat.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=8"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Mix cornstarch with water, then stir into the skillet. Cook until sauce thickens. Add sesame oil to finish.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=9"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Slice cucumber thinly on the diagonal. Then take one little stack of cucumber slices at a time and cut thin matchsticks. Set aside for garnish.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=10"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Cook fresh noodles in boiling water (if you can’t read the directions, just know that fresh noodles cook quickly, so taste it after 3 minutes and check). Serve immediately, as the noodles get gummy and stick together as they cool. Top with meat sauce and garnish with slivered cucumber.",
+      "url": "https://www.umami.recipes/recipe/6GU8VBUycqn2GxzKq223?start=true&step=11"
+    }
+  ]
+}
