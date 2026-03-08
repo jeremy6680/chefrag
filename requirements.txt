@@ -1,22 +1,30 @@
 # ==============================================================================
 # ChefRAG — Python dependencies
-# Pin major versions for reproducibility; allow patch updates.
+#
+# All versions are pinned exactly (==) to guarantee reproducible installs.
+# Validated compatible set — do not upgrade individual packages in isolation.
+#
+# To upgrade: test the full set with pip install --dry-run before committing.
+#
+# Note: llama-index-llms-anthropic is intentionally excluded — it requires
+# anthropic[bedrock,vertex] extras that cause irresolvable dependency conflicts.
+# The agent calls the Anthropic API directly via the anthropic SDK (see ADR-006).
 # ==============================================================================
 
 # --- UI ---
 streamlit==1.35.0
 
 # --- LLM ---
-anthropic==0.28.0
+anthropic==0.84.0
 
 # --- RAG / Agents ---
-llama-index==0.10.43
-llama-index-vector-stores-chroma==0.1.10
-llama-index-llms-anthropic==0.2.2
-llama-index-embeddings-huggingface==0.2.2   # local embeddings — no extra API cost
+llama-index==0.14.15
+llama-index-core==0.14.15
+llama-index-vector-stores-chroma==0.5.5
+llama-index-embeddings-huggingface==0.6.1
 
 # --- Vector store ---
-chromadb==0.5.3
+chromadb==0.5.17
 
 # --- Metadata store ---
 duckdb==1.0.0
@@ -25,12 +33,15 @@ duckdb==1.0.0
 bcrypt==4.1.3
 
 # --- Data validation ---
-pydantic==2.7.1
+pydantic==2.11.5
+
+# --- API (required by some deps) ---
+fastapi==0.111.0
 
 # --- Utilities ---
 python-dotenv==1.0.1
-isodate==0.6.1          # parse ISO 8601 durations (prepTime, cookTime)
-loguru==0.7.2           # structured logging
+isodate==0.6.1
+loguru==0.7.2
 
 # --- Dev / Testing ---
 pytest==8.2.2
