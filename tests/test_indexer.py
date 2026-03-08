@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 import duckdb
 import pytest
 
-from app.indexer import (
+from indexer import (
     DUCKDB_TABLE_NAME,
     extract_clean_ingredients,
     extract_recipe_id,

@@ -152,3 +152,60 @@ For exports without any bullet characters (fallback), all lines above a minimum 
 **Decision:** Both tools are run in parallel. The agent intersects semantic results with metadata-filtered results. If the intersection is empty (no recipe matches both criteria), it falls back to semantic-only results rather than returning nothing.
 
 **Consequences:** Users always get suggestions even when filters are strict. The fallback is clearly explained in the system prompt so Claude can tell the user which constraint could not be satisfied.
+
+---
+
+## ADR-012 — python-dotenv for local development
+
+**Date:** Step 5
+**Status:** Accepted
+
+**Context:** Streamlit does not load `.env` files automatically. Environment
+variables set in `.env` were not visible to the app when running locally,
+causing `APP_PASSWORD` and other variables to appear unset.
+
+**Decision:** `python-dotenv` is added to `requirements.txt`. `load_dotenv()`
+is called at the top of `app/main.py` before any other imports that read env
+vars. In production (Coolify), variables are injected directly by the platform
+and no `.env` file is present — `load_dotenv()` is a no-op in that case.
+
+**Consequences:** None in production. Local dev works without manual `export`
+commands.
+
+---
+
+## ADR-013 — CHROMA_HOST differs between local dev and Docker
+
+**Date:** Step 5
+**Status:** Accepted
+
+**Context:** ChromaDB runs as `chefrag-chroma` in Docker Compose. This
+hostname is only resolvable inside the Docker network. When running Streamlit
+locally (outside Docker) against a locally-exposed ChromaDB container,
+`chefrag-chroma` cannot be resolved.
+
+**Decision:** `.env.example` documents both values with a comment. Developers
+must set `CHROMA_HOST=localhost` for local dev and `CHROMA_HOST=chefrag-chroma`
+for Docker / production.
+
+**Consequences:** One manual `.env` change required when switching between
+local and Docker environments. Acceptable for a single-developer project.
+
+---
+
+## ADR-014 — Makefile for local development commands
+
+**Date:** Step 5
+**Status:** Accepted
+
+**Context:** Several commands need to be run repeatedly during development:
+starting ChromaDB, launching Streamlit via the venv, running the indexer,
+running tests. Typing full paths each time is error-prone.
+
+**Decision:** A `Makefile` is added at the project root with targets: `run`,
+`test`, `lint`, `chroma`, `index`. All targets use `.venv/bin/` explicitly to
+avoid pyenv shim interference.
+
+**Consequences:** `make` must be available (standard on macOS/Linux). The
+`index` target hardcodes `localhost` — must be updated if the ChromaDB host
+changes.

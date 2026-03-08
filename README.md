@@ -61,16 +61,29 @@ Export recipes from the Umami app as JSON (Schema.org format) and place them in:
 ## Development
 
 ```bash
-# Install dependencies
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
-# Run tests
-pytest
+# Start ChromaDB (Docker required)
+make chroma
 
-# Format code
-black app/ tests/
-ruff check app/ tests/
+# Index your recipes (run once, then after each new export)
+make index
+
+# Launch the app
+make run
+
+# Run tests
+make test
+
+# Lint
+make lint
 ```
+
+> **Note:** Set `CHROMA_HOST=localhost` in your `.env` for local development.
+> Use `CHROMA_HOST=chefrag-chroma` when running inside Docker Compose.
 
 ## Project documentation
 
