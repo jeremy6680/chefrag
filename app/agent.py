@@ -612,13 +612,18 @@ class ChefRagAgent:
             )
             language = "en"
 
-        # Retrieve recipe context using the user's latest message as the query
-        user_query = last_message["content"]
-        recipes = self._retrieve_recipes(query=user_query, filters=filters)
+        # Use the first user message as the RAG query (ingredients description).
+        # Later messages are preference answers ("Mild", "30 min") which are
+        # poor semantic queries for ChromaDB.
+        first_user_message = next(
+            (m["content"] for m in messages if m.get("role") == "user"),
+            last_message["content"],  # fallback if somehow no user message found
+        )
+        recipes = self._retrieve_recipes(query=first_user_message, filters=filters)
         recipe_context = format_recipe_context(recipes)
 
-        # Inject recipe context into the last user message
-        augmented_content = f"{user_query}\n\n---\n{recipe_context}\n---"
+        # Inject recipe context into the last user message only
+        augmented_content = f"{last_message['content']}\n\n---\n{recipe_context}\n---"
         augmented_messages = messages[:-1] + [
             {"role": "user", "content": augmented_content}
         ]

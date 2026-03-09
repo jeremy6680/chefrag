@@ -502,8 +502,13 @@ def _call_agent_and_handle_response() -> None:
     response_type = response.get("type", "message")
 
     if response_type == "question":
-        # Store question for rendering on next rerun — do NOT add to history
-        # (questions are UI state, not conversation content)
+        # Add the question text to history so Claude sees its own questions
+        # on the next turn and knows where it is in the clarification flow.
+        question_text = response.get("text", "")
+        if question_text:
+            st.session_state.chat_history.append(
+                {"role": "assistant", "content": question_text}
+            )
         st.session_state.pending_question = response
         st.rerun()
 
