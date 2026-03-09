@@ -79,7 +79,7 @@
 - [ ] Review and improve agent response quality (relevance, tone, match explanation)
 - [ ] Improve chat UX (message rendering, loading states, error handling)
 - [ ] Review i18n strings for naturalness (FR especially)
-- [ ] Add conversation history passed to `agent.chat()` (currently single-turn)
+- [x] Add conversation history passed to `agent.chat()` (currently single-turn)
 
 ---
 
