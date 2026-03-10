@@ -22,8 +22,14 @@ services:
     restart: unless-stopped
     ports:
       - "8501:8501"
-    env_file:
-      - .env
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - APP_PASSWORD=${APP_PASSWORD}
+      - APP_LANGUAGE_DEFAULT=${APP_LANGUAGE_DEFAULT:-fr}
+      - CHROMA_HOST=chefrag-chroma
+      - CHROMA_PORT=8000
+      - DUCKDB_PATH=/app/storage/duckdb/chefrag.duckdb
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
       # Recipe JSON exports — writable so Admin UI can save uploads
       - chefrag_data:/app/data
