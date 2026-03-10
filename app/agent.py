@@ -79,19 +79,9 @@ class RecipeResult:
     total_time_minutes: int
     source_category: str
     ingredients_clean: str
+    instructions_text: str = ""
     score: float = 0.0
 
-@dataclass
-class RecipeResult:
-    id: str
-    name: str
-    url: str
-    cuisine_tags: list[str]
-    total_time_minutes: int
-    source_category: str
-    ingredients_clean: str
-    instructions_text: str = ""   # ← nouveau
-    score: float = 0.0
 
 @dataclass
 class SearchFilters:
