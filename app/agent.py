@@ -167,6 +167,9 @@ Use ONLY these recipes to make suggestions — do not invent recipes not in the 
 
 4. For each recipe you suggest, ALWAYS use this exact structure:
 
+   Start with a warm 1–2 sentence intro explaining why you selected this recipe
+   and how it fits the user's request. Then:
+   
    **[Recipe name]**
    - 🥘 **Ingredients:** list the main ingredients (comma-separated, from context)
    - ⏱️ **Time:** total time in minutes (write "not specified" if 0 or missing)
