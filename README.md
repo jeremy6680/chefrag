@@ -6,6 +6,14 @@ You describe what ingredients you have — ChefRAG finds matching recipes from y
 
 ---
 
+## 🌐 Live demo
+
+A live instance is deployed at **[chefrag.lumafinch.com](https://chefrag.lumafinch.com)**.
+
+> This instance runs on my personal recipe collection. To request a demo password, contact me at [hey@jeremymarchandeau.com](mailto:hey@jeremymarchandeau.com).
+
+---
+
 ## Features
 
 - 🔍 **Semantic search** on your own recipes (ingredients, descriptions, instructions)
@@ -26,7 +34,6 @@ You describe what ingredients you have — ChefRAG finds matching recipes from y
 | RAG            | LlamaIndex                 |
 | Vector store   | ChromaDB                   |
 | Metadata       | DuckDB                     |
-| Orchestration  | Apache Airflow _(Step 6)_  |
 | Infrastructure | Docker + Hetzner + Coolify |
 
 ---
@@ -149,6 +156,8 @@ Export recipes from the Umami app as JSON (Schema.org format) and place them in:
 
 Then run `make index` (local) or `make docker-index` (Docker).
 
+> **Note:** `data/` is gitignored — your personal recipes are never committed to the repository.
+
 ---
 
 ## Environment variables
@@ -177,4 +186,4 @@ See `.env.example` for the full list. Key variables:
 
 ## License
 
-MIT
+MIT — see [`LICENSE`](LICENSE)

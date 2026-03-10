@@ -94,10 +94,24 @@
 
 ---
 
-## 🔲 Step 7 — Deployment
+## ✅ Step 7 — Deployment
 
-- [ ] Final Docker Compose validation
-- [ ] Coolify environment variable setup guide
-- [ ] SSL + domain configuration
-- [ ] End-to-end smoke test on Hetzner CPX21
-- [ ] `DECISIONS.md` finalized
+- [x] Final Docker Compose validation
+- [x] Coolify environment variable setup
+- [x] SSL + domain configuration (chefrag.lumafinch.com)
+- [x] End-to-end smoke test on Hetzner CPX21
+- [x] `DECISIONS.md` finalized
+- [x] `LICENSE` file added (MIT)
+- [x] Repository made public on GitHub
+
+---
+
+## 🔲 Future improvements (post-MVP)
+
+> Ideas to explore after the public release.
+
+- [ ] Improve recipe match explanations (more specific ingredient-level reasoning)
+- [ ] Add a "suggest recipe from pantry" mode (user lists everything they have)
+- [ ] Support additional Umami export categories beyond Favorites / New
+- [ ] Explore adding a shopping list generation feature
+- [ ] Evaluate migration to a managed vector store (e.g. Pinecone) for scale
