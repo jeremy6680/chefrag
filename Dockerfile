@@ -22,7 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # --- Application code ---
 COPY app/ ./app/
-COPY data/ ./data/
 COPY tests/ ./tests/
 COPY conftest.py ./conftest.py
 
