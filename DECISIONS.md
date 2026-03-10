@@ -231,3 +231,24 @@ pour référence future.
 **Consequences:** Pas de ré-indexation automatique (FileSensor supprimé). L'indexation
 est déclenchée manuellement par l'utilisateur via l'UI — ce qui est acceptable pour un
 usage solo. Économie de ~1.5GB RAM sur le VPS. Zéro dépendance supplémentaire.
+
+---
+
+## ADR-016 — Public GitHub repository
+
+**Date:** Step 7
+**Status:** Accepted
+
+**Context:** ChefRAG was initially developed in a private GitHub repository.
+After completing the MVP (Steps 1–7), the project is ready to be open-sourced.
+
+**Decision:** The repository is made public under the MIT License. Personal data
+is protected by `.gitignore` (`.env`, `data/`, `storage/`). A live demo is
+accessible at chefrag.lumafinch.com — a password is required and available on
+request.
+
+**Consequences:** The codebase, architecture decisions, and documentation are
+publicly visible. Secrets and personal recipe data remain private via
+`.gitignore`. The `tests/fixtures/` directory contains sample Umami JSON exports
+used for testing — these are non-sensitive recipe data included intentionally as
+examples for contributors.
