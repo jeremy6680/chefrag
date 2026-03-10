@@ -20,6 +20,8 @@ from typing import Any
 
 import streamlit as st
 
+from admin import render_admin_tab
+
 from agent import build_agent, get_agent_response
 from auth import is_locked_out, login_form, logout, SESSION_KEY_AUTHENTICATED
 
@@ -464,70 +466,71 @@ def render_chat_page() -> None:
 
     st.divider()
 
-    # ---- Chat history ----
-    st.markdown(
-        f'<div role="log" aria-label="{t("aria_chat_history")}" aria-live="polite">',
-        unsafe_allow_html=True,
-    )
+    # ---- Tabs: Chat / Admin ----
+    tab_chat, tab_admin = st.tabs([
+        f"💬 {t('chat_tab_title')}",
+        f"⚙️ {t('admin_tab_title')}",
+    ])
 
-    history = st.session_state.chat_history
+    with tab_admin:
+        render_admin_tab(st.session_state.translations, t)
 
-    if not history:
-        render_chat_message("assistant", t("chat_welcome"))
+    with tab_chat:
+        # ---- Chat history ----
+        st.markdown(
+            f'<div role="log" aria-label="{t("aria_chat_history")}" aria-live="polite">',
+            unsafe_allow_html=True,
+        )
 
-    for message in history[-MAX_VISIBLE_TURNS:]:
-        render_chat_message(message["role"], message["content"])
+        history = st.session_state.chat_history
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        if not history:
+            render_chat_message("assistant", t("chat_welcome"))
 
-    # ---- New conversation button ----
-    if history:
-        if st.button(t("chat_clear"), key="clear_btn", help=t("aria_clear_button")):
-            st.session_state.chat_history = []
-            st.session_state.pending_question = None
-            st.session_state.cuisine_other_active = False
-            st.session_state.last_error = None
-            st.rerun()
+        for message in history[-MAX_VISIBLE_TURNS:]:
+            render_chat_message(message["role"], message["content"])
 
-    # ---- Pending error: show error bubble + Retry in chat flow ----
-    # Rendered before the pending_question check so a failed agent call
-    # after a button answer also surfaces the error correctly.
-    if st.session_state.last_error:
-        _render_error_in_chat(st.session_state.last_error)
-        return
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- After a button answer is injected, call the agent on the next rerun ----
-    if st.session_state.needs_agent_call:
-        st.session_state.needs_agent_call = False
-        _call_agent_and_handle_response()
-        return
+        # ---- New conversation button ----
+        if history:
+            if st.button(t("chat_clear"), key="clear_btn", help=t("aria_clear_button")):
+                st.session_state.chat_history = []
+                st.session_state.pending_question = None
+                st.session_state.cuisine_other_active = False
+                st.session_state.last_error = None
+                st.rerun()
 
-    # ---- Pending question OR text input ----
-    # If the agent returned a clarifying question on the last turn, render
-    # the question widget instead of the free-text input bar.
-    if st.session_state.pending_question:
-        render_question_widget(st.session_state.pending_question)
-        # Do NOT render the chat_input while a question is pending —
-        # the button widget is the expected interaction point.
-        return
-
-    # ---- Free-text input bar ----
-    user_input = st.chat_input(
-        placeholder=t("chat_placeholder"),
-        key="chat_input",
-    )
-
-    if user_input:
-        user_input = user_input.strip()
-        if not user_input:
-            st.warning(t("chat_no_input"))
+        # ---- Pending error: show error bubble + Retry in chat flow ----
+        if st.session_state.last_error:
+            _render_error_in_chat(st.session_state.last_error)
             return
 
-        # Append user message to history before calling the agent.
-        # The message is already rendered above via the history loop on the next rerun —
-        # we do NOT render it here to avoid a double display.
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        _call_agent_and_handle_response()
+        # ---- After a button answer is injected, call the agent on the next rerun ----
+        if st.session_state.needs_agent_call:
+            st.session_state.needs_agent_call = False
+            _call_agent_and_handle_response()
+            return
+
+        # ---- Pending question OR text input ----
+        if st.session_state.pending_question:
+            render_question_widget(st.session_state.pending_question)
+            return
+
+        # ---- Free-text input bar ----
+        user_input = st.chat_input(
+            placeholder=t("chat_placeholder"),
+            key="chat_input",
+        )
+
+        if user_input:
+            user_input = user_input.strip()
+            if not user_input:
+                st.warning(t("chat_no_input"))
+                return
+
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            _call_agent_and_handle_response()
 
 
 def _call_agent_and_handle_response() -> None:
