@@ -365,17 +365,19 @@ def index_recipe_in_chroma(
 
     # Metadata stored alongside the vector — used for display and filtering
     metadata = {
-        "name": recipe.name,
-        "url": recipe.url,
-        "recipe_category": recipe.recipe_category,
-        "source_category": recipe.source_category,
-        "recipe_cuisine": recipe.recipe_cuisine,
-        "cuisine_tags": ", ".join(recipe.cuisine_tags),
-        "total_time_minutes": recipe.total_time_minutes,
-        "prep_time_minutes": recipe.prep_time_minutes,
-        "cook_time_minutes": recipe.cook_time_minutes,
-        "keywords": recipe.keywords,
-    }
+            "name": recipe.name,
+            "url": recipe.url,
+            "recipe_category": recipe.recipe_category,
+            "source_category": recipe.source_category,
+            "recipe_cuisine": recipe.recipe_cuisine,
+            "cuisine_tags": ", ".join(recipe.cuisine_tags),
+            "total_time_minutes": recipe.total_time_minutes,
+            "prep_time_minutes": recipe.prep_time_minutes,
+            "cook_time_minutes": recipe.cook_time_minutes,
+            "keywords": recipe.keywords,
+            "ingredients_clean": ", ".join(recipe.ingredients_clean),
+            "instructions": " | ".join(recipe.instructions),
+        }
 
     collection.upsert(
         ids=[recipe.id],

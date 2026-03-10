@@ -81,6 +81,17 @@ class RecipeResult:
     ingredients_clean: str
     score: float = 0.0
 
+@dataclass
+class RecipeResult:
+    id: str
+    name: str
+    url: str
+    cuisine_tags: list[str]
+    total_time_minutes: int
+    source_category: str
+    ingredients_clean: str
+    instructions_text: str = ""   # ← nouveau
+    score: float = 0.0
 
 @dataclass
 class SearchFilters:
@@ -154,10 +165,17 @@ no other text before or after. Example:
 you will receive a list of matching recipes from their collection. \
 Use ONLY these recipes to make suggestions — do not invent recipes not in the provided context.
 
-4. For each recipe you suggest, ALWAYS explain:
-   - Which of the user's available ingredients it uses
-   - Why it matches their stated preferences
-   - A link to the full recipe (use the URL provided)
+4. For each recipe you suggest, ALWAYS use this exact structure:
+
+   **[Recipe name]**
+   - 🥘 **Ingredients:** list the main ingredients (comma-separated, from context)
+   - ⏱️ **Time:** total time in minutes (write "not specified" if 0 or missing)
+   - 📋 **Steps:** 2–3 sentences summarising the main cooking steps (from context)
+   - ✅ **Why it matches:** which of the user's ingredients or preferences it uses
+   - 🔗 [View full recipe](URL)
+
+   Never skip any of these five elements. Never invent ingredients, times or steps \
+— use only what is in the provided context.
 
 5. If no recipes match, say so clearly and suggest which filters the user could relax.
 
@@ -342,6 +360,7 @@ class RecipeSearchTool:
                     total_time_minutes=int(metadata.get("total_time_minutes", 0)),
                     source_category=metadata.get("source_category", ""),
                     ingredients_clean=metadata.get("ingredients_clean", ""),
+                    instructions_text=metadata.get("instructions", ""), 
                     score=score,
                 )
 
@@ -469,7 +488,7 @@ def format_recipe_context(recipes: list[RecipeResult]) -> str:
         time_str = (
             f"{recipe.total_time_minutes} min"
             if recipe.total_time_minutes > 0
-            else "time not specified"
+            else "not specified"
         )
         cuisine_str = ", ".join(recipe.cuisine_tags) if recipe.cuisine_tags else "not specified"
         lines += [
@@ -478,6 +497,7 @@ def format_recipe_context(recipes: list[RecipeResult]) -> str:
             f"   Cuisine: {cuisine_str}",
             f"   Total time: {time_str}",
             f"   Ingredients: {recipe.ingredients_clean}",
+            f"   Instructions: {recipe.instructions_text}",  # ← nouveau
             f"   URL: {recipe.url}",
             "",
         ]
