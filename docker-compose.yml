@@ -6,7 +6,6 @@
 #   chefrag-chroma → ChromaDB vector store (port 8000)
 #
 # DuckDB runs inside chefrag-ui via a mounted volume (no separate service).
-# Airflow will be added in Step 6.
 # ==============================================================================
 
 version: "3.9"
@@ -26,10 +25,10 @@ services:
     env_file:
       - .env
     volumes:
-      # Recipe JSON exports (read-only inside container)
-      - ./data:/app/data:ro
-      # DuckDB persistent storage (read-write)
-      - ./storage/duckdb:/app/storage/duckdb
+      # Recipe JSON exports — writable so Admin UI can save uploads
+      - chefrag_data:/app/data
+      # DuckDB persistent storage
+      - chefrag_duckdb:/app/storage/duckdb
     depends_on:
       chefrag-chroma:
         condition: service_healthy
@@ -53,7 +52,7 @@ services:
       - "8000:8000"
     volumes:
       # ChromaDB persistent storage
-      - ./storage/chroma:/chroma/chroma
+      - chefrag_chroma:/chroma/chroma
     environment:
       - IS_PERSISTENT=TRUE
       - PERSIST_DIRECTORY=/chroma/chroma
@@ -66,6 +65,14 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+# ------------------------------------------------------------------------------
+# Named volumes — managed by Docker, persistent across Coolify deployments
+# ------------------------------------------------------------------------------
+volumes:
+  chefrag_data:
+  chefraf_duckdb:
+  chefrag_chroma:
 
 # ------------------------------------------------------------------------------
 # Shared network
