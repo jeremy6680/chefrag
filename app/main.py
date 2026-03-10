@@ -5,6 +5,8 @@ Handles:
 - Password-based authentication (via auth.py)
 - Chat interface with recipe category selector (via agent.py)
 - Structured question rendering: clickable buttons for clarifying questions
+- Loading state: inline "ChefRAG réfléchit..." message in the chat flow
+- Error handling: error displayed in chat flow with a Retry button
 - Responsive layout and WCAG 2.1 AA accessibility
 """
 from dotenv import load_dotenv
@@ -117,6 +119,11 @@ def init_session_state() -> None:
         st.session_state.cuisine_other_active = False
     if "needs_agent_call" not in st.session_state:
         st.session_state.needs_agent_call = False
+    if "last_error" not in st.session_state:
+        # Stores the last agent error message so the Retry button can re-surface it.
+        # None when no error is pending.
+        st.session_state.last_error = None
+
 
 # ---------------------------------------------------------------------------
 # Language toggle
@@ -165,16 +172,20 @@ def render_login_page() -> None:
 def get_agent() -> Any:
     """Return the cached agent, building it if not yet initialised.
 
+    The build is wrapped in a chat_message block so the loading indicator
+    appears inline in the conversation flow rather than as a floating spinner.
+
     Returns:
         A fully initialised ChefRagAgent instance.
     """
     if st.session_state.agent is None:
-        with st.spinner(t("chat_thinking")):
-            st.session_state.agent = build_agent(
-                chroma_host=os.getenv("CHROMA_HOST", "chefrag-chroma"),
-                chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
-                duckdb_path=os.getenv("DUCKDB_PATH", "storage/duckdb/chefrag.duckdb"),
-            )
+        with st.chat_message("assistant"):
+            with st.spinner(t("chat_thinking")):
+                st.session_state.agent = build_agent(
+                    chroma_host=os.getenv("CHROMA_HOST", "chefrag-chroma"),
+                    chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
+                    duckdb_path=os.getenv("DUCKDB_PATH", "storage/duckdb/chefrag.duckdb"),
+                )
     return st.session_state.agent
 
 
@@ -270,11 +281,41 @@ def _render_free_text_input(question_key: str) -> None:
         key=f"free_text_{question_key}",
         placeholder=placeholder,
     )
-    if st.button(t("chat_send") if "chat_send" in st.session_state.get("translations", {}) else "→", key=f"free_text_submit_{question_key}"):
+    if st.button(
+        t("chat_send") if "chat_send" in st.session_state.get("translations", {}) else "→",
+        key=f"free_text_submit_{question_key}",
+    ):
         if value.strip():
             _inject_user_answer(value.strip())
         else:
             st.warning(t("chat_no_input"))
+
+
+def _render_error_in_chat(error_message: str) -> None:
+    """Display an agent error inline in the chat flow with a Retry button.
+
+    The error is rendered inside a ``st.chat_message("assistant")`` block so
+    it appears at the correct position in the conversation. A Retry button
+    sets ``needs_agent_call = True`` and reruns, allowing the agent to be
+    called again without the user retyping their message.
+
+    The last user message is already in ``chat_history`` at this point —
+    the retry simply re-sends the existing history.
+
+    Args:
+        error_message: Localised error string to display.
+    """
+    with st.chat_message("assistant"):
+        st.markdown(
+            f'<span class="sr-only">{t("aria_assistant_message")}:</span>',
+            unsafe_allow_html=True,
+        )
+        st.error(error_message, icon="⚠️")
+        if st.button(t("chat_retry"), key="retry_btn"):
+            # Clear the stored error and re-trigger the agent call
+            st.session_state.last_error = None
+            st.session_state.needs_agent_call = True
+            st.rerun()
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +341,10 @@ def render_chat_page() -> None:
         """
         <style>
         /* Screen-reader-only utility */
+        /* display: inline prevents Streamlit from creating an empty block node
+           that shifts the visible message text downward. */
         .sr-only {
+            display: inline;
             position: absolute;
             width: 1px;
             height: 1px;
@@ -369,6 +413,12 @@ def render_chat_page() -> None:
         }
 
         hr { border-color: rgba(255,255,255,0.1); }
+
+        /* ---- Fix: remove Streamlit's default 1rem gap inside chat bubbles ---- */
+        /* The gap is set on the flex container wrapping sr-only + message content. */
+        div[data-testid="stChatMessage"] div[data-testid="stVerticalBlock"] {
+            gap: 0 !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -408,6 +458,7 @@ def render_chat_page() -> None:
             st.session_state.agent = None
             st.session_state.pending_question = None
             st.session_state.cuisine_other_active = False
+            st.session_state.last_error = None
             logout(st.session_state)
             st.rerun()
 
@@ -435,12 +486,21 @@ def render_chat_page() -> None:
             st.session_state.chat_history = []
             st.session_state.pending_question = None
             st.session_state.cuisine_other_active = False
+            st.session_state.last_error = None
             st.rerun()
 
-    # After a button answer is injected, call the agent on the next rerun
+    # ---- Pending error: show error bubble + Retry in chat flow ----
+    # Rendered before the pending_question check so a failed agent call
+    # after a button answer also surfaces the error correctly.
+    if st.session_state.last_error:
+        _render_error_in_chat(st.session_state.last_error)
+        return
+
+    # ---- After a button answer is injected, call the agent on the next rerun ----
     if st.session_state.needs_agent_call:
         st.session_state.needs_agent_call = False
         _call_agent_and_handle_response()
+        return
 
     # ---- Pending question OR text input ----
     # If the agent returned a clarifying question on the last turn, render
@@ -463,25 +523,48 @@ def render_chat_page() -> None:
             st.warning(t("chat_no_input"))
             return
 
-        # Append user message to history
+        # Append user message to history before calling the agent.
+        # The message is already rendered above via the history loop on the next rerun —
+        # we do NOT render it here to avoid a double display.
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-        render_chat_message("user", user_input)
-
         _call_agent_and_handle_response()
 
 
 def _call_agent_and_handle_response() -> None:
     """Call the agent with the current history and handle its structured response.
 
-    - If the agent returns a "question", store it in pending_question and rerun.
-    - If the agent returns a "message", render it and append to history.
+    Loading state:
+        Displays a "ChefRAG réfléchit..." message inline in the chat flow
+        (inside a st.chat_message block) while waiting for the agent.
+        The placeholder is replaced by the real response once available.
 
-    This function is called both after free-text input and after a button
-    answer is injected (via _inject_user_answer → rerun → this function).
+    Error handling:
+        On exception, stores the localised error in ``last_error`` session key
+        and resets ``pending_question`` to avoid a blocked UI. The error is
+        rendered on the next rerun via ``_render_error_in_chat()``.
+
+    Success — question:
+        Stores the question dict in ``pending_question`` and reruns so the
+        question is appended to the chat history and rendered as a widget.
+
+    Success — message:
+        Appends the assistant reply to history and reruns so the message
+        appears in the chat history loop (single render path).
     """
     agent = get_agent()
 
-    with st.spinner(t("chat_thinking")):
+    # ---- Inline loading indicator ----
+    # Renders "ChefRAG réfléchit..." in an assistant chat bubble while the
+    # API call is in flight. st.empty() lets us replace it on the same rerun
+    # without leaving a ghost bubble behind.
+    with st.chat_message("assistant"):
+        thinking_placeholder = st.empty()
+        thinking_placeholder.markdown(
+            f'<span class="sr-only">{t("aria_assistant_message")}:</span>'
+            f"_{t('chat_thinking')}_",
+            unsafe_allow_html=True,
+        )
+
         try:
             response = get_agent_response(
                 agent=agent,
@@ -491,19 +574,21 @@ def _call_agent_and_handle_response() -> None:
             )
         except Exception as exc:
             logger.exception("Agent error: %s", exc)
-            error_msg = t("chat_error")
-            with st.chat_message("assistant"):
-                st.error(error_msg, icon="⚠️")
-            st.session_state.chat_history.append(
-                {"role": "assistant", "content": error_msg}
-            )
+            # Clear the thinking indicator — the error bubble replaces it
+            thinking_placeholder.empty()
+            # Store error for rendering on next rerun; reset pending state
+            st.session_state.last_error = t("chat_error")
+            st.session_state.pending_question = None
+            st.rerun()
             return
+
+        # Clear the thinking indicator before rendering the real response
+        thinking_placeholder.empty()
 
     response_type = response.get("type", "message")
 
     if response_type == "question":
-        # Add the question text to history so Claude sees its own questions
-        # on the next turn and knows where it is in the clarification flow.
+        # Append question text to history so Claude tracks its own flow
         question_text = response.get("text", "")
         if question_text:
             st.session_state.chat_history.append(
@@ -513,17 +598,12 @@ def _call_agent_and_handle_response() -> None:
         st.rerun()
 
     else:
-        # Plain message — render and append to history
+        # Append assistant message to history; rerun renders it via history loop
         text = response.get("text", "")
-        with st.chat_message("assistant"):
-            st.markdown(
-                f'<span class="sr-only">{t("aria_assistant_message")}:</span>',
-                unsafe_allow_html=True,
-            )
-            st.markdown(text)
         st.session_state.chat_history.append(
             {"role": "assistant", "content": text}
         )
+        st.rerun()
 
 
 # ---------------------------------------------------------------------------

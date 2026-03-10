@@ -25,6 +25,7 @@
   "chat_placeholder": "E.g. I have eggs, grated cheese and ham...",
   "chat_send": "Send",
   "chat_clear": "New conversation",
+  "chat_retry": "Retry",
   "chat_thinking": "ChefRAG is thinking...",
   "chat_welcome": "Hello! I'm ChefRAG, your personal culinary assistant. Tell me what ingredients you have on hand and I'll suggest recipes from your personal collection.",
   "chat_error": "Something went wrong. Please try again.",

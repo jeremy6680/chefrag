@@ -25,6 +25,7 @@
   "chat_placeholder": "Ex : J'ai des œufs, du fromage râpé et du jambon...",
   "chat_send": "Envoyer",
   "chat_clear": "Nouvelle conversation",
+  "chat_retry": "Réessayer",
   "chat_thinking": "ChefRAG réfléchit...",
   "chat_welcome": "Bonjour ! Je suis ChefRAG, votre assistant culinaire. Dites-moi quels ingrédients vous avez sous la main et je vous suggérerai des recettes de votre collection personnelle.",
   "chat_error": "Une erreur s'est produite. Veuillez réessayer.",
