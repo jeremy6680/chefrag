@@ -30,6 +30,7 @@
   "chat_welcome": "Hello! I'm ChefRAG, your personal culinary assistant. Tell me what ingredients you have on hand and I'll suggest recipes from your personal collection.",
   "chat_error": "Something went wrong. Please try again.",
   "chat_no_input": "Please type a message before sending.",
+  "chat_tab_title": "Chat",
 
   "category_label": "Recipe category",
   "category_all": "All",
@@ -47,5 +48,24 @@
   "aria_user_message": "Your message",
   "aria_assistant_message": "ChefRAG response",
   "aria_logout_button": "Sign out",
-  "aria_category_select": "Select recipe category"
+  "aria_category_select": "Select recipe category",
+
+  "admin_tab_title": "Administration",
+  "admin_upload_favorites_label": "Favorites recipes — import JSON files",
+  "admin_upload_new_label": "New recipes — import JSON files",
+  "admin_upload_help": "Accepts one or more JSON files exported from Umami.",
+  "admin_files_ready": "{count} file(s) ready to index",
+  "admin_no_files": "No file selected.",
+  "admin_index_button": "🔄 Run indexing",
+  "admin_index_running": "Indexing in progress…",
+  "admin_index_saving": "Saving {filename}…",
+  "admin_index_saved": "✅ {filename} saved.",
+  "admin_index_category_start": "Indexing category '{category}'…",
+  "admin_index_category_done": "✅ {category} — {count} recipe(s) indexed.",
+  "admin_index_category_empty": "⚠️ No JSON file found for '{category}'.",
+  "admin_index_done": "✅ Indexing complete.",
+  "admin_index_error": "❌ Error: {error}",
+  "admin_index_no_files": "⚠️ No files to index. Please import at least one JSON.",
+  "admin_section_favorites": "📁 Favorites",
+  "admin_section_new": "📁 New"
 }

@@ -83,12 +83,14 @@
 
 ---
 
-## 🔲 Step 6 — Airflow DAG (`dags/reindex_dag.py`)
+## ✅ Step 6 — Admin UI (upload + indexing)
 
-- [ ] Add Airflow service to `docker-compose.yml`
-- [ ] `reindex_recipes_dag` with FileSensor
-- [ ] Tasks: detect → parse → clear → embed → metadata → notify
-- [ ] Memory/resource tuning for CPX21
+- [x] ADR-015 — Airflow remplacé par interface admin Streamlit
+- [x] `app/admin.py` — `save_uploaded_file()` + `render_admin_tab()`
+- [x] `app/main.py` — ajout `st.tabs()` Chat / Admin
+- [x] `app/i18n/fr.json` + `en.json` — clés admin ajoutées
+- [x] `dags/reindex_dag.py` — archivé avec commentaire ADR-015
+- [x] `DECISIONS.md` — ADR-015 documenté
 
 ---
 

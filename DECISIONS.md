@@ -209,3 +209,25 @@ avoid pyenv shim interference.
 **Consequences:** `make` must be available (standard on macOS/Linux). The
 `index` target hardcodes `localhost` — must be updated if the ChromaDB host
 changes.
+
+---
+
+## ADR-015 — Airflow remplacé par une interface admin Streamlit
+
+**Date:** Step 6  
+**Status:** Accepted
+
+**Context:** Airflow (webserver + scheduler) consomme ~1.5–2GB RAM sur un CPX21 (4GB total).
+L'usage prévu était un FileSensor sur `data/favorites/` et `data/new/` pour déclencher
+le ré-indexation après chaque export Umami. Or, Streamlit dispose d'un widget
+`st.file_uploader` natif qui permet d'uploader des JSON directement depuis le navigateur.
+
+**Decision:** Airflow est supprimé du projet. Un onglet "Admin" est ajouté à l'interface
+Streamlit existante. Il permet d'uploader des fichiers JSON Umami par catégorie et de
+lancer `run_indexing()` directement depuis l'UI, avec retour visuel en temps réel via
+`st.status()`. Le fichier `dags/reindex_dag.py` est conservé comme placeholder commenté
+pour référence future.
+
+**Consequences:** Pas de ré-indexation automatique (FileSensor supprimé). L'indexation
+est déclenchée manuellement par l'utilisateur via l'UI — ce qui est acceptable pour un
+usage solo. Économie de ~1.5GB RAM sur le VPS. Zéro dépendance supplémentaire.
