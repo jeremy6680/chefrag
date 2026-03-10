@@ -11,7 +11,7 @@
   "login_submit": "Se connecter",
   "login_error_invalid": "Mot de passe incorrect. Veuillez réessayer.",
   "login_error_locked": "Trop de tentatives échouées. Veuillez réessayer dans quelques instants.",
-  "login_attempts_remaining": "Tentative(s) restante(s) : {n}",
+  "login_attempts_remaining": "Il vous reste {n} tentative(s).",
   "login": {
     "title": "Connexion",
     "password_label": "Mot de passe",
@@ -25,10 +25,11 @@
   "chat_placeholder": "Ex : J'ai des œufs, du fromage râpé et du jambon...",
   "chat_send": "Envoyer",
   "chat_clear": "Nouvelle conversation",
+  "chat_retry": "Réessayer",
   "chat_thinking": "ChefRAG réfléchit...",
   "chat_welcome": "Bonjour ! Je suis ChefRAG, votre assistant culinaire. Dites-moi quels ingrédients vous avez sous la main et je vous suggérerai des recettes de votre collection personnelle.",
-  "chat_error": "Une erreur s'est produite. Veuillez réessayer.",
-  "chat_no_input": "Veuillez saisir un message avant d'envoyer.",
+  "chat_error": "Oups, une erreur s'est produite. Réessayez dans un instant.",
+  "chat_no_input": "Écrivez un message pour continuer.",
 
   "category_label": "Catégorie de recettes",
   "category_all": "Toutes",

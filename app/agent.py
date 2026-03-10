@@ -11,9 +11,10 @@ State management (session history, language) is handled by main.py (Streamlit).
 
 Public API:
     build_agent(chroma_host, chroma_port, duckdb_path) -> ChefRagAgent
-    agent.chat(messages, language) -> str
+    agent.chat(messages, language) -> dict  {"type": "message"|"question", ...}
 """
 
+import json
 import logging
 import os
 from dataclasses import dataclass, field
@@ -46,6 +47,11 @@ DUCKDB_MAX_RESULTS = 10
 # Supported language codes
 SUPPORTED_LANGUAGES = ("fr", "en")
 
+# Sentinel string Claude must output to signal a structured question
+# The agent wraps JSON in this tag so we can detect it reliably
+QUESTION_TAG_OPEN = "<chefrag_question>"
+QUESTION_TAG_CLOSE = "</chefrag_question>"
+
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
@@ -73,6 +79,7 @@ class RecipeResult:
     total_time_minutes: int
     source_category: str
     ingredients_clean: str
+    instructions_text: str = ""
     score: float = 0.0
 
 
@@ -99,7 +106,7 @@ class SearchFilters:
 
 # The system prompt is the core of the agent's behaviour.
 # It instructs Claude to:
-#   1. Ask clarifying questions before searching
+#   1. Ask clarifying questions ONE AT A TIME using a strict JSON format
 #   2. Use the retrieved recipe context to justify suggestions
 #   3. Respond in the user's chosen language
 #   4. Be honest when no match is found
@@ -109,35 +116,74 @@ You help the user find recipes from their personal Umami recipe collection based
 
 ## Your behaviour
 
-1. When the user tells you what ingredients they have, ALWAYS ask the following clarifying questions \
-BEFORE searching for recipes (you can ask them all at once in a friendly way):
-   - Preferred difficulty: Easy / Medium / Hard / Any?
-   - Available cooking time: < 15 min / 30 min / 1 hour / Any?
-   - Spice level: Mild / Medium / Spicy / Any?
-   - Cuisine type preference: Asian / French / Italian / Mexican / Any?
-   - Recipe category: Favorites only / New recipes only / Both?
+1. When the user tells you what ingredients they have, ask clarifying questions ONE AT A TIME \
+to refine the search — unless the user explicitly wants a direct suggestion (see exceptions below).
 
-2. Once you have the user's preferences, you will receive a list of matching recipes from their collection. \
-Use ONLY these recipes to make suggestions — do not invent or suggest recipes that are not in the provided context.
+   Ask questions in this order:
+   a. Spice level
+   b. Available cooking time
+   c. Cuisine type preference
+   d. Recipe category (Favorites / New / Both)
 
-3. For each recipe you suggest, ALWAYS explain:
-   - Which of the user's available ingredients it uses
-   - Why it matches their stated preferences (time, cuisine, etc.)
-   - A link to the full recipe (use the URL provided)
+   For each question, output ONLY a JSON block wrapped in {open_tag} and {close_tag} tags — \
+no other text before or after. Example:
 
-4. If no recipes match, say so clearly and suggest which filters the user could relax to get results.
+{open_tag}
+{{"type": "question", "key": "spice_level", "text": "Spice level?", "options": ["Mild", "Medium", "Spicy", "Any"]}}
+{close_tag}
 
-5. Keep your tone warm, concise and practical. Avoid unnecessary filler phrases.
+   Valid question keys and their options:
+   - "spice_level": ["Mild", "Medium", "Spicy", "Any"]
+   - "cook_time": ["< 15 min", "30 min", "1 hour", "Any"]
+   - "cuisine": ["Asian", "French", "Italian", "Mexican", "Any", "Other"]
+   - "category": ["Favorites", "New recipes", "Both"]
+
+   If the user selects "Other" for cuisine, ask a free-text follow-up question:
+{open_tag}
+{{"type": "question", "key": "cuisine_other", "text": "What type of cuisine are you looking for?", "options": []}}
+{close_tag}
+
+   (Empty options list signals a free-text input field, not buttons.)
+
+2. IMPORTANT EXCEPTIONS — skip clarifying questions and search immediately if:
+   - The user uses explicit phrases like "just give me a recipe", "surprise me",
+     "anything works", "I don't care", or similar direct requests to skip questions.
+   - Do NOT skip questions just because the ingredients are clear or specific.
+   - Do NOT skip questions just because you think you already know a good match.
+
+3. Once you have enough information (or the user wants an immediate suggestion), \
+you will receive a list of matching recipes from their collection. \
+Use ONLY these recipes to make suggestions — do not invent recipes not in the provided context.
+
+4. For each recipe you suggest, ALWAYS use this exact structure:
+
+   Start with a warm 1–2 sentence intro explaining why you selected this recipe
+   and how it fits the user's request. Then:
+   
+   **[Recipe name]**
+   - 🥘 **Ingredients:** list the main ingredients (comma-separated, from context)
+   - ⏱️ **Time:** total time in minutes (write "not specified" if 0 or missing)
+   - 📋 **Steps:** 2–3 sentences summarising the main cooking steps (from context)
+   - ✅ **Why it matches:** which of the user's ingredients or preferences it uses
+   - 🔗 [View full recipe](URL)
+
+   Never skip any of these five elements. Never invent ingredients, times or steps \
+— use only what is in the provided context.
+
+5. If no recipes match, say so clearly and suggest which filters the user could relax.
+
+6. Keep your tone warm, concise and practical. Avoid unnecessary filler phrases.
 
 ## Language
 
-Respond exclusively in {language}. All your messages must be in {language}, \
-including clarifying questions, recipe suggestions, and error messages.
+Respond exclusively in {language}. All your messages must be in {language}.
 Recipe names and ingredient lists may remain in their original language.
+When outputting a {open_tag}...{close_tag} question block, the "text" and "options" values \
+must also be in {language}.
 
 ## Context format
 
-When recipes are available, they will be provided to you in this format:
+When recipes are available, they will be provided in this format:
 ---
 RECIPE CONTEXT:
 [list of matching recipes with their metadata]
@@ -156,7 +202,49 @@ def build_system_prompt(language: str) -> str:
         Formatted system prompt string.
     """
     lang_label = "French" if language == "fr" else "English"
-    return SYSTEM_PROMPT_TEMPLATE.format(language=lang_label)
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        language=lang_label,
+        open_tag=QUESTION_TAG_OPEN,
+        close_tag=QUESTION_TAG_CLOSE,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Response parser
+# ---------------------------------------------------------------------------
+
+
+def parse_agent_response(raw: str) -> dict:
+    """Parse the raw Claude response into a structured dict.
+
+    If the response contains a <chefrag_question>...</chefrag_question> block,
+    extract and parse the JSON inside it and return a "question" type dict.
+    Otherwise return a plain "message" type dict.
+
+    Args:
+        raw: Raw string response from the Claude API.
+
+    Returns:
+        A dict with at minimum a "type" key:
+        - {"type": "message", "text": str}
+        - {"type": "question", "key": str, "text": str, "options": list[str]}
+    """
+    if QUESTION_TAG_OPEN in raw and QUESTION_TAG_CLOSE in raw:
+        start = raw.index(QUESTION_TAG_OPEN) + len(QUESTION_TAG_OPEN)
+        end = raw.index(QUESTION_TAG_CLOSE)
+        json_str = raw[start:end].strip()
+        try:
+            parsed = json.loads(json_str)
+            # Validate required fields are present
+            if parsed.get("type") == "question" and "key" in parsed and "text" in parsed:
+                parsed.setdefault("options", [])
+                return parsed
+        except json.JSONDecodeError:
+            logging.getLogger(__name__).warning(
+                "Failed to parse question JSON: %s", json_str
+            )
+    # Default: plain text message
+    return {"type": "message", "text": raw.strip()}
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +353,7 @@ class RecipeSearchTool:
                     total_time_minutes=int(metadata.get("total_time_minutes", 0)),
                     source_category=metadata.get("source_category", ""),
                     ingredients_clean=metadata.get("ingredients_clean", ""),
+                    instructions_text=metadata.get("instructions", ""), 
                     score=score,
                 )
 
@@ -392,7 +481,7 @@ def format_recipe_context(recipes: list[RecipeResult]) -> str:
         time_str = (
             f"{recipe.total_time_minutes} min"
             if recipe.total_time_minutes > 0
-            else "time not specified"
+            else "not specified"
         )
         cuisine_str = ", ".join(recipe.cuisine_tags) if recipe.cuisine_tags else "not specified"
         lines += [
@@ -401,6 +490,7 @@ def format_recipe_context(recipes: list[RecipeResult]) -> str:
             f"   Cuisine: {cuisine_str}",
             f"   Total time: {time_str}",
             f"   Ingredients: {recipe.ingredients_clean}",
+            f"   Instructions: {recipe.instructions_text}",  # ← nouveau
             f"   URL: {recipe.url}",
             "",
         ]
@@ -499,15 +589,16 @@ class ChefRagAgent:
         messages: list[dict[str, str]],
         language: str = "en",
         filters: Optional[SearchFilters] = None,
-    ) -> str:
-        """Generate a response to the latest user message.
+    ) -> dict:
+        """Generate a structured response to the latest user message.
 
         Takes the full conversation history, optionally retrieves matching
         recipes as RAG context, and calls the Claude API to generate a reply.
 
-        The last message in `messages` must have role="user". If recipe
-        context is available, it is injected into the last user message
-        before being sent to Claude.
+        The response is always a dict with a "type" key:
+        - {"type": "message", "text": str}  — plain assistant reply
+        - {"type": "question", "key": str, "text": str, "options": list[str]}
+          — a clarifying question to render as clickable buttons in the UI
 
         Args:
             messages: Full conversation history as a list of
@@ -516,7 +607,7 @@ class ChefRagAgent:
             filters: Optional structured filters extracted from user preferences.
 
         Returns:
-            The assistant's response as a plain string.
+            Structured response dict (see above).
 
         Raises:
             ValueError: If messages is empty or the last message is not from the user.
@@ -534,13 +625,18 @@ class ChefRagAgent:
             )
             language = "en"
 
-        # Retrieve recipe context using the user's latest message as the query
-        user_query = last_message["content"]
-        recipes = self._retrieve_recipes(query=user_query, filters=filters)
+        # Use the first user message as the RAG query (ingredients description).
+        # Later messages are preference answers ("Mild", "30 min") which are
+        # poor semantic queries for ChromaDB.
+        first_user_message = next(
+            (m["content"] for m in messages if m.get("role") == "user"),
+            last_message["content"],  # fallback if somehow no user message found
+        )
+        recipes = self._retrieve_recipes(query=first_user_message, filters=filters)
         recipe_context = format_recipe_context(recipes)
 
-        # Inject recipe context into the last user message
-        augmented_content = f"{user_query}\n\n---\n{recipe_context}\n---"
+        # Inject recipe context into the last user message only
+        augmented_content = f"{last_message['content']}\n\n---\n{recipe_context}\n---"
         augmented_messages = messages[:-1] + [
             {"role": "user", "content": augmented_content}
         ]
@@ -554,11 +650,16 @@ class ChefRagAgent:
             messages=augmented_messages,
         )
 
-        reply = response.content[0].text
+        raw_reply = response.content[0].text
+        parsed = parse_agent_response(raw_reply)
+
         self._logger.info(
-            "Agent replied (%d chars) in language='%s'.", len(reply), language
+            "Agent replied type='%s' (%d chars) in language='%s'.",
+            parsed.get("type"),
+            len(raw_reply),
+            language,
         )
-        return reply
+        return parsed
 
 
 # ---------------------------------------------------------------------------
@@ -613,7 +714,46 @@ def build_agent(
 
 
 # ---------------------------------------------------------------------------
-# Streaming wrapper — public API consumed by main.py (Step 5)
+# Streaming wrapper — public API consumed by main.py
+# ---------------------------------------------------------------------------
+
+
+def get_agent_response(
+    agent: "ChefRagAgent",
+    messages: list[dict[str, str]],
+    category: str = "all",
+    language: str = "fr",
+) -> dict:
+    """Get the agent's structured response for the full conversation history.
+
+    Replaces the old stream_agent_response() word-by-word generator.
+    Returns a structured dict instead of yielding text chunks, so main.py
+    can decide how to render it (buttons for questions, markdown for messages).
+
+    Args:
+        agent: Initialised ChefRagAgent instance from build_agent().
+        messages: Full conversation history as list of {role, content} dicts.
+        category: Recipe category filter — "all", "favorites", or "new".
+        language: Active UI language — "fr" or "en".
+
+    Returns:
+        Structured response dict:
+        - {"type": "message", "text": str}
+        - {"type": "question", "key": str, "text": str, "options": list[str]}
+    """
+    filters = SearchFilters(
+        source_category=None if category == "all" else category
+    )
+
+    return agent.chat(
+        messages=messages,
+        language=language,
+        filters=filters,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible streaming wrapper (kept for test compatibility)
 # ---------------------------------------------------------------------------
 
 
@@ -623,35 +763,30 @@ def stream_agent_response(
     category: str = "all",
     language: str = "fr",
 ) -> Iterator[str]:
-    """Stream the agent's response word by word for the Streamlit chat UI.
+    """Stream the agent's response word by word (legacy wrapper).
 
-    Wraps ``ChefRagAgent.chat()`` and simulates token streaming by splitting
-    the complete response into words. This avoids holding the full response
-    in memory before rendering starts.
+    Kept for backward compatibility with existing tests.
+    New UI code should use get_agent_response() instead.
 
     Args:
-        agent: Initialised ChefRagAgent instance from ``build_agent()``.
+        agent: Initialised ChefRagAgent instance from build_agent().
         user_message: Raw user input from the chat interface.
-        category: Recipe category filter — ``"all"``, ``"favorites"``,
-            or ``"new"``.
-        language: Active UI language — ``"fr"`` or ``"en"``.
+        category: Recipe category filter — "all", "favorites", or "new".
+        language: Active UI language — "fr" or "en".
 
     Yields:
-        Successive word chunks of the assistant's response.
+        Successive word chunks of the assistant's response text.
     """
-    from collections.abc import Iterator  # local import to avoid circular ref
-
     filters = SearchFilters(
         source_category=None if category == "all" else category
     )
 
-    # chat() returns the full response as a string — we split it into words
-    # to simulate streaming in the Streamlit UI
-    full_response = agent.chat(
+    result = agent.chat(
         messages=[{"role": "user", "content": user_message}],
         language=language,
         filters=filters,
     )
 
-    for word in full_response.split(" "):
+    text = result.get("text", "")
+    for word in text.split(" "):
         yield word + " "
