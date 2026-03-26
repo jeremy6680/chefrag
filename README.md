@@ -8,7 +8,7 @@ You describe what ingredients you have — ChefRAG finds matching recipes from y
 
 ## 🌐 Live demo
 
-A live instance is deployed at **[chefrag.lumafinch.com](https://chefrag.lumafinch.com)**.
+A live instance is deployed at **[chefrag.web2data.org](https://chefrag.web2data.org)**.
 
 > This instance runs on my personal recipe collection. To request a demo password, contact me at [hey@jeremymarchandeau.com](mailto:hey@jeremymarchandeau.com).
 
